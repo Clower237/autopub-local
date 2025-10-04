@@ -1,11 +1,14 @@
 services:
   - type: web
     name: autopub-local
-    env: docker
-    plan: starter
+    env: python
+    region: oregon
+    plan: free
+    buildCommand: pip install -r requirements.txt
+    startCommand: uvicorn app:app --host 0.0.0.0 --port $PORT
+    envVars:
+      - key: PYTHON_VERSION
+        value: 3.10.13
+      - key: PYTHONUNBUFFERED
+        value: "1"
     autoDeploy: true
-    healthCheckPath: /health
-    disk:
-      name: data
-      mountPath: /data
-      sizeGB: 3
