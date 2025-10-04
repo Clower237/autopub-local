@@ -1,0 +1,11 @@
+services:
+  - type: web
+    name: autopub-local
+    env: docker
+    plan: starter
+    autoDeploy: true
+    healthCheckPath: /health
+    disk:
+      name: data
+      mountPath: /data
+      sizeGB: 3

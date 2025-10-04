@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>AutoPub • Dashboard</title>
+  <style>
+    :root{
+      --bg:#fff9fc; --panel:#ffffff; --accent:#ff6aa2; --accent-2:#9a70ff;
+      --text:#2a2a2a; --muted:#6b6b6b; --chip:#ffe0ec;
+      --ok:#17a34a; --warn:#e7a300; --err:#e23d5a; --border:#f1d7e3;
+      --shadow:0 10px 30px rgba(255,106,162,.12); --radius:16px;
+    }
+    *{box-sizing:border-box}
+    body{margin:0; background:var(--bg); color:var(--text);
+      font-family: Inter, system-ui, -apple-system, Segoe UI, Roboto, sans-serif;}
+    .wrap{max-width:1280px; margin:24px auto; padding:0 16px}
+    header{display:flex; align-items:center; gap:14px; margin-bottom:18px;}
+    .logo{width:40px; height:40px; border-radius:12px;
+      background:linear-gradient(135deg,var(--accent),var(--accent-2)); box-shadow:var(--shadow)}
+    h1{font-size:24px; margin:0}
+    .tag{padding:6px 10px; border-radius:999px; background:var(--chip); color:var(--accent); font-weight:600; font-size:12px}
+    .card{background:var(--panel); border:1px solid var(--border); border-radius:var(--radius); box-shadow:var(--shadow); padding:18px}
+    .grid{display:grid; gap:16px}
+    .g-2{grid-template-columns:1fr 1fr}
+    .g-3{grid-template-columns:1fr 1fr 1fr}
+    @media (max-width: 1000px){ .g-2,.g-3{grid-template-columns:1fr} }
+    label{font-size:13px; color:var(--muted); display:block; margin-bottom:6px}
+    input, textarea, select{
+      width:100%; padding:12px 12px; border:1px solid #eee; border-radius:12px; outline:none; background:#fff;
+      font-size:14px; transition:border .15s, box-shadow .15s;
+    }
+    textarea{min-height:120px; resize:vertical}
+    input:focus, textarea:focus, select:focus{border-color:var(--accent); box-shadow:0 0 0 4px rgba(255,106,162,.12)}
+    button{
+      border:0; background:var(--accent); color:#fff; padding:12px 16px; border-radius:12px; font-weight:700; cursor:pointer;
+      box-shadow:var(--shadow); transition:transform .05s ease;
+    }
+    button.secondary{background:#f3e9ff; color:#5339a6}
+    button.ghost{background:transparent; color:var(--muted); box-shadow:none}
+    button:active{transform:translateY(1px)}
+    .row{display:flex; align-items:center; gap:10px; flex-wrap:wrap}
+    .right{margin-left:auto}
+    .status{display:inline-flex; align-items:center; gap:8px; padding:6px 10px; border-radius:999px; font-size:12px; font-weight:700}
+    .READY{background:#fff4da; color:#9a6500}
+    .RENDERING{background:#eaf2ff; color:#0d47a1}
+    .DONE{background:#e7fff2; color:#0b7a3b}
+    .UPLOADING{background:#f0f4ff; color:#2743d1}
+    .SCHEDULED{background:#f0f9ff; color:#086788}
+    .PUBLISHED{background:#e6ffe8; color:#0b7a3b}
+    .FAILED{background:#ffe6ec; color:#b6133a}
+    table{width:100%; border-collapse:collapse}
+    th,td{padding:10px; border-bottom:1px solid #f3e3ec; text-align:left; font-size:14px; vertical-align:middle}
+    th{font-size:12px; color:var(--muted); text-transform:uppercase; letter-spacing:.04em}
+    .empty{color:var(--muted); text-align:center; padding:24px}
+    .section-title{display:flex; align-items:center; gap:10px; margin:6px 0 12px}
+    .section-title h2{font-size:18px; margin:0}
+    .pill{padding:6px 10px; border-radius:999px; background:#ffeef6; color:#b81c61; font-weight:700; font-size:12px}
+    .hint{font-size:12px; color:var(--muted)}
+    .danger{background:var(--err)!important}
+    .success{background:var(--ok)!important}
+    .kpis{display:grid; gap:16px; grid-template-columns:repeat(4,1fr); margin:16px 0}
+    .kpi{background:var(--panel); border:1px solid var(--border); border-radius:16px; padding:14px; box-shadow:var(--shadow)}
+    .kpi .v{font-size:26px; font-weight:800}
+    .kpi .t{color:var(--muted); font-size:12px; margin-top:2px}
+    @media (max-width: 1000px){ .kpis{grid-template-columns:1fr 1fr} }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <header>
+      <div class="logo"></div>
+      <div>
+        <h1>AutoPub <span class="tag">Clair & Girly</span></h1>
+        <div class="hint">Création & publication de vidéos YouTube — TTS, miniature, programmation.</div>
+      </div>
+      <div class="right" id="authState"></div>
+    </header>
+
+    <!-- BARRE D’ACTIONS -->
+    <div class="card">
+      <div class="row">
+        <div class="hint">Connecte d’abord YouTube pour éviter le popup pendant l’upload.</div>
+        <button class="secondary" onclick="connectYouTube()">🔗 Connecter YouTube</button>
+        <button class="ghost right" onclick="logout()">Se déconnecter</button>
+      </div>
+    </div>
+
+    <!-- KPIs -->
+    <div class="kpis">
+      <div class="kpi"><div class="v" id="k_created_today">0</div><div class="t">Vidéos créées (aujourd’hui)</div></div>
+      <div class="kpi"><div class="v" id="k_published_today">0</div><div class="t">Publiées (aujourd’hui)</div></div>
+      <div class="kpi"><div class="v" id="k_scheduled_today">0</div><div class="t">Programmées (aujourd’hui)</div></div>
+      <div class="kpi"><div class="v" id="k_failed_today">0</div><div class="t">Échecs (aujourd’hui)</div></div>
+    </div>
+
+    <div class="grid g-2">
+      <!-- FORM VIDEO -->
+      <div class="card">
+        <div class="section-title"><h2>Ajouter une vidéo</h2><span class="pill">Brouillon → Envoi</span></div>
+        <div class="grid g-2">
+          <div><label>Titre *</label><input id="f_title" placeholder="Mon super titre" /></div>
+          <div><label>Tags (séparés par des virgules)</label><input id="f_tags" placeholder="histoire, incroyable" /></div>
+          <div class="grid g-2">
+            <div>
+              <label>Catégorie de voix</label>
+              <select id="f_voicecat">
+                <option value="femme">Femme</option>
+                <option value="homme">Homme</option>
+                <option value="enfant-fille">Enfant — Fille</option>
+                <option value="enfant-garcon">Enfant — Garçon</option>
+              </select>
+            </div>
+            <div><label>Vitesse</label><input id="f_speed" type="number" step="0.1" value="1.3" /></div>
+          </div>
+          <div><label>Description</label><textarea id="f_desc" placeholder="#hashtags... texte description"></textarea></div>
+          <div><label>Texte voix off *</label><textarea id="f_script" placeholder="Colle ici tout le script..."></textarea></div>
+          <div class="grid g-2">
+            <div><label>Date/heure de publication (ISO, vide = publier immédiatement)</label><input id="f_publish" placeholder="2025-10-03T16:00:00Z" /></div>
+            <div><label>Miniature *</label><input id="f_thumb" type="file" accept="image/*" /></div>
+          </div>
+        </div>
+        <div class="row" style="margin-top:12px">
+          <button onclick="addDraft()">💗 Ajouter au brouillon</button>
+          <button class="secondary" onclick="sendAllDrafts()">🚀 Envoyer tous les brouillons</button>
+        </div>
+      </div>
+
+      <!-- BROUILLONS -->
+      <div class="card">
+        <div class="section-title"><h2>Brouillons (local)</h2><span class="hint" id="draftCount">0 items</span></div>
+        <div id="draftList" class="empty">Aucun brouillon pour l’instant.</div>
+      </div>
+    </div>
+
+    <!-- JOBS -->
+    <div class="card" style="margin-top:16px">
+      <div class="section-title">
+        <h2>Suivi des jobs (serveur)</h2>
+        <div class="right row">
+          <label class="row" style="gap:6px"><input id="autoR" type="checkbox" onchange="toggleAuto()"/> Auto-refresh 10s</label>
+          <button class="secondary" onclick="loadStats();loadJobs();">Rafraîchir</button>
+        </div>
+      </div>
+      <div style="overflow:auto">
+        <table id="jobsTable">
+          <thead>
+            <tr>
+              <th>ID</th><th>Miniature</th><th>Titre</th><th>Statut</th><th>Msg</th><th>Audio</th><th>Vidéo</th><th>YouTube</th><th>Publish</th>
+            </tr>
+          </thead>
+          <tbody id="jobsBody"><tr><td colspan="9" class="empty">Aucune donnée.</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+
+  <script>
+    const API = location.origin;
+    let token = localStorage.getItem('token')||'';
+    if(!token){ location.replace('/login'); }
+
+    const drafts = [];
+    let auto = null;
+    function $(id){return document.getElementById(id)}
+
+    function uiAuthState(){
+      const box = $('authState');
+      if(token){ box.innerHTML = `<span class="status PUBLISHED">Connecté</span>`; }
+      else { box.innerHTML = `<span class="status READY">Hors ligne</span>`; }
+    }
+
+    function logout(){ localStorage.removeItem('token'); token=''; location.replace('/login'); }
+
+    async function connectYouTube(){
+      try{
+        const r=await fetch(`${API}/youtube/connect`,{headers:{Authorization:`Bearer ${token}`}});
+        if(!r.ok){ throw new Error('Échec connexion YouTube'); }
+        alert('Compte YouTube connecté (token enregistré).');
+      }catch(e){ alert(e.message); }
+    }
+
+    function addDraft(){
+      const title=$('f_title').value.trim();
+      const description=$('f_desc').value; const tags=$('f_tags').value; const script=$('f_script').value;
+      const voice_category=$('f_voicecat').value; const speed=parseFloat($('f_speed').value||'1.3');
+      const publish_iso=($('f_publish').value||'').trim();
+      const thumb=$('f_thumb').files[0];
+      if(!title||!script||!thumb) return alert('Titre, Script et Miniature sont requis');
+      drafts.push({title, description, tags, script_text:script, voice_category, speed, publish_iso, thumbFile:thumb});
+      renderDrafts();
+      $('f_title').value=''; $('f_script').value=''; $('f_thumb').value='';
+    }
+    function renderDrafts(){
+      $('draftCount').textContent = `${drafts.length} items`;
+      const box=$('draftList');
+      if(!drafts.length){ box.className='empty'; box.innerHTML='Aucun brouillon pour l’instant.'; return; }
+      box.className='';
+      box.innerHTML = drafts.map((d,i)=>`
+        <div class="card" style="margin-bottom:10px">
+          <div class="row"><strong>#${i+1}</strong><span class="hint">${escapeHtml(d.title)}</span><span class="right hint">${d.publish_iso?('⏰ '+escapeHtml(d.publish_iso)):'⏱ maintenant'}</span></div>
+          <div class="row" style="margin-top:8px">
+            <button class="secondary" onclick="sendOne(${i})">Envoyer</button>
+            <button class="ghost" onclick="removeDraft(${i})">Supprimer</button>
+          </div>
+        </div>`).join('');
+    }
+    function removeDraft(i){ drafts.splice(i,1); renderDrafts(); }
+
+    async function sendOne(i){
+      const d=drafts[i]; if(!d) return;
+      const fd=new FormData();
+      fd.append('title', d.title);
+      fd.append('description', d.description);
+      fd.append('tags', d.tags);
+      fd.append('script_text', d.script_text);
+      fd.append('voice_category', d.voice_category);
+      fd.append('voice', '');
+      fd.append('speed', String(d.speed||1.3));
+      fd.append('publish_iso', d.publish_iso);
+      fd.append('thumbnail', d.thumbFile, d.thumbFile.name);
+      try{
+        const r=await fetch(`${API}/jobs`,{method:'POST', headers:{'Authorization':`Bearer ${token}`}, body:fd});
+        if(!r.ok){ const t=await r.json(); throw new Error(t.detail||'Échec création job'); }
+        await r.json();
+        removeDraft(i);
+        loadStats();
+        loadJobs();
+      }catch(e){ alert(e.message); }
+    }
+    async function sendAllDrafts(){
+      for(let i=0;i<drafts.length;i++){
+        await sendOne(0);
+      }
+    }
+
+    async function loadJobs(){
+      const url = `${API}/jobs?limit=100&offset=0`;
+      try{
+        const r=await fetch(url,{headers:{'Authorization':`Bearer ${token}`}});
+        if(!r.ok){ if(r.status===401){logout();return} throw new Error('Erreur chargement jobs'); }
+        const data=await r.json();
+        renderJobs(data);
+      }catch(e){ console.error(e) }
+    }
+    async function loadStats(){
+      try{
+        const r=await fetch(`${API}/stats`, { headers:{Authorization:`Bearer ${token}`} });
+        if(!r.ok) return;
+        const s=await r.json();
+        $('k_created_today').textContent   = s.created_today ?? 0;
+        $('k_published_today').textContent = s.published_today ?? 0;
+        $('k_scheduled_today').textContent = s.scheduled_today ?? 0;
+        $('k_failed_today').textContent    = s.failed_today ?? 0;
+      }catch(e){ console.warn(e); }
+    }
+
+    function toStorageUrl(p){
+      if(!p) return '';
+      const norm=p.replace(/\\/g,'/');
+      if(norm.startsWith('/')) return norm;
+      if(norm.startsWith('storage/')) return '/'+norm;
+      return norm;
+    }
+    function toThumbUrl(p){
+      if(!p) return '';
+      const norm=p.replace(/\\/g,'/');
+      if(norm.startsWith('/storage/')) return norm;
+      if(norm.startsWith('storage/')) return '/'+norm;
+      const filename = norm.split('/').pop();
+      return '/storage/thumbs/'+filename;
+    }
+    function renderJobs(items){
+      const tb=$('jobsBody');
+      if(!items.length){
+        tb.innerHTML = `<tr><td colspan="9" class="empty">Aucun job pour le moment.</td></tr>`;
+        return;
+      }
+      tb.innerHTML = items.map(j=>{
+        const thumb = j.thumbnail_path ? `<img src="${toThumbUrl(j.thumbnail_path)}" alt="" style="width:64px;height:36px;object-fit:cover;border-radius:8px;border:1px solid #f1d7e3" />` : '';
+        const apath = j.audio_path ? toStorageUrl(j.audio_path) : '';
+        const vpath = j.video_path ? toStorageUrl(j.video_path) : '';
+        const yt    = j.youtube_video_id ? `https://www.youtube.com/watch?v=${j.youtube_video_id}` : '';
+
+        const ap = apath ? `<a href="${apath}" download>Télécharger</a>` : '';
+        const vp = vpath ? `<a href="${vpath}" download>Télécharger</a>` : '';
+        const yv = yt    ? `<a target="_blank" href="${yt}">Ouvrir</a>`   : '';
+
+        return `<tr>
+          <td>${j.id}</td>
+          <td>${thumb}</td>
+          <td>${escapeHtml(j.title||'')}</td>
+          <td><span class="status ${j.status}">${j.status}</span></td>
+          <td>${escapeHtml(j.progress_msg||'')}</td>
+          <td>${ap}</td>
+          <td>${vp}</td>
+          <td>${yv}</td>
+          <td>${j.publish_iso?escapeHtml(j.publish_iso):'<em>immédiat</em>'}</td>
+        </tr>`;
+      }).join('');
+    }
+
+    function toggleAuto(){
+      if($('autoR').checked){ auto=setInterval(()=>{ loadStats(); loadJobs(); }, 10000); }
+      else { clearInterval(auto); auto=null; }
+    }
+    function escapeHtml(s){
+      return (s||'').replace(/[&<>"]+/g, m=>({"&":"&amp;","<":"&lt;",">":"&gt;","\"":"&quot;"}[m]));
+    }
+
+    (function(){
+      uiAuthState();
+      loadStats();
+      loadJobs();
+    })();
+  </script>
+</body>
+</html>

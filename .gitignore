@@ -1,0 +1,32 @@
+﻿# --- secrets & tokens ---
+.env
+tokens/
+users/
+client_secret.json
+youtube_token.json
+*.pem
+*.p12
+
+# --- données locales ---
+autopub_local.db
+*.db
+storage/
+*.mp4
+*.mp3
+*.wav
+*.webm
+*.mov
+*.jpg
+*.jpeg
+*.png
+__pycache__/
+*.pyc
+
+# --- OS/IDE ---
+.DS_Store
+Thumbs.db
+.vscode/
+.idea/
+
+# --- garder les exemples ---
+!*.example
