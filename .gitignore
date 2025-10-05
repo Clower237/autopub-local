@@ -1,9 +1,7 @@
-﻿# Fichiers et dossiers à ignorer
-.env
-autopub_local.db
+﻿# Secrets à NE JAMAIS committer
+client_secret.json
 tokens/
-storage/
 users/
-__pycache__/
-*.pyc
-*.log
+*.db
+*.sqlite
+youtube_token.json
