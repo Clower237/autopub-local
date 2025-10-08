@@ -16,6 +16,13 @@ from models import User, Job
 from auth import get_password_hash, verify_password, create_access_token, get_current_user
 from worker import ensure_worker_running, poke_worker
 from schemas import JobOut
+from fastapi import Depends
+from fastapi.responses import RedirectResponse, HTMLResponse
+from sqlalchemy.orm import Session
+from database import init_db, get_db
+from auth import get_current_user
+import google_oauth
+from worker import ensure_worker_running
 
 # ---------------------------------------------------------------------
 # Boot & Dossiers (compat Render)
@@ -349,3 +356,19 @@ if __name__ == "__main__":
     import uvicorn
     port = int(os.getenv("PORT", "8000"))
     uvicorn.run(app, host="0.0.0.0", port=port)
+
+
+@app.on_event("startup")
+def _startup():
+    init_db()
+    try: ensure_worker_running()
+    except: pass
+
+@app.get("/auth/drive/start")
+def drive_start(current_user=Depends(get_current_user)):
+    return RedirectResponse(google_oauth.drive_start_url(current_user.id))
+
+@app.get("/auth/drive/callback")
+def drive_callback(code: str, state: str, db: Session = Depends(get_db)):
+    google_oauth.finish_drive_oauth(db, code, state)
+    return HTMLResponse("<h3>Google Drive connecté ✅</h3><p>Tu peux revenir à l’app.</p>")
