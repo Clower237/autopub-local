@@ -6,6 +6,9 @@ from database import Base
 from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
 from sqlalchemy.sql import func
 from database import Base
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey
+from sqlalchemy.sql import func
+from database import Base
 
 class OAuthToken(Base):
     __tablename__ = "oauth_tokens"
@@ -43,5 +46,18 @@ class Job(Base):
     youtube_video_id = Column(String(64), nullable=True)
     status = Column(String(32), default="READY")
     progress_msg = Column(Text, default="")
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    updated_at = Column(DateTime(timezone=True), onupdate=func.now())
+
+
+class OAuthToken(Base):
+    __tablename__ = "oauth_tokens"
+    id = Column(Integer, primary_key=True, index=True)
+    user_id = Column(Integer, ForeignKey("users.id"), nullable=False, index=True)
+    provider = Column(String(32), nullable=False)  # "drive" ou "youtube"
+    access_token = Column(Text, nullable=False)
+    refresh_token = Column(Text, nullable=True)
+    scopes = Column(Text, nullable=True)
+    expiry = Column(DateTime(timezone=True), nullable=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     updated_at = Column(DateTime(timezone=True), onupdate=func.now())
