@@ -23,6 +23,6 @@ def get_db():
         db.close()
 
 def init_db():
-    # Import ici pour éviter les imports circulaires
+    # Import local pour éviter les imports circulaires
     from models import User, Job, OAuthToken  # noqa: F401
     Base.metadata.create_all(bind=engine)
